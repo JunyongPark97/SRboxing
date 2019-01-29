@@ -1,0 +1,579 @@
+{% extends 'Sean_boxing/base.html' %}
+
+
+{% block title %}source{% endblock %}
+
+
+{% block script %}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/async/2.0.1/async.js"></script>
+{% endblock %}
+
+
+{% block body %}
+    {%  if user.is_authenticated  %}
+
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-xs-2 col-md-1">
+                {% if anchor.prev and p_frame%}
+                    <a class="btn btn-danger" href="{% url 'project-detail' pk=prev_anchor.pk pk2=p_frame.pk %}">Prev_Anchor</a>
+                {% else %}
+                    <a class="btn btn-danger" disabled="disabled">Start</a>
+                {% endif %}
+            </div>
+            <div class="col-xs-2 col-md-1">
+                {% if anchor.next and n_frame %}
+                    <a class="btn btn-danger" href="{% url 'project-detail' pk=next_anchor.pk pk2=n_frame.pk %}">Next_anchor</a>
+                {% else %}
+                    <a class="btn btn-danger" disabled="disabled">End</a>
+                    {#      <a class="btn btn-danger" disabled="disabled">End2</a>#}
+                {% endif %}
+            </div>
+        <div style="float: right; margin-right: 30px">
+            <h4><a href="{% url 'main' %}">홈으로 가기</a></h4>
+                <h4>Hello, {{ user }}</h4>
+        </div>
+            <div class="col-xs-3 col-md-2">
+                <p class="error"></p>
+            </div>
+        </div>
+
+        <div class="row" style="clear: both;">
+            <p class="anchor-image">
+                <img  style="; border: 3px solid red" src="{{ anchor.anchor_image.url }}" width="200" hspace="20"/>
+                <strong>←보기와 같은 그림에 박스를 쳐 주세요 &nbsp; &nbsp;</strong>
+                <span style="padding-right: 140px"><img src="{{ anchor.QBQ_source.image_url }}" width="400/" >
+                    <strong>원본 Image</strong>
+                </span>
+                <span>
+                    {% for anchor in all_anchors %}
+                        <img src="{{ anchor.anchor_image.url }}" width="170/" hspace="20">||
+                    {% endfor %}
+                    <strong>생성된 모든 이미지 (확인해주세요)</strong>
+                </span>
+            </p>
+        </div>
+
+
+{#        <div class="row" style="float: top;">#}
+            <span style="font: normal 1.5em/1em 'Noto Sans CJK KR Light', serif ; color: blue;">
+                <h4 style="margin-left: 670px;">
+                    박스: {{ box_count }}/50 &nbsp;&nbsp;
+                {% if box_count >= 49 %}
+                    <a class="btn btn-success" href="{% url 'edit-project' pk=anchor.pk pk2=frame.pk%}">작업완료</a>
+                {% else %}
+                    <a class="btn btn-success" disabled="disabled">작업완료</a>
+                    {#      <a class="btn btn-danger" disabled="disabled">End2</a>#}
+                {% endif %}
+                </h4>
+            </span>
+
+{#        </div>#}
+
+{#        <div class="row" style="clear: both;">#}
+            <span style="margin-left: 100px;">
+                추가 기능 : 드래그(박스 이동) / 우측하단 드래그(크기 조절) / 우클릭(박스 제거)</span>
+{#        </div>#}
+
+
+        <div class="wrapper">
+            <canvas class="canvas"></canvas>
+        </div>
+
+        <div class="row">
+            <div class="col-xs-2 col-md-1">
+                <a class="btn btn-danger" href="{% url 'project-detail' pk=anchor.pk pk2=first_frame%}">처음으로가기</a>
+            </div>
+            <div class="col-xs-2 col-md-1">
+                {% if frame.prev and frame.prev.pk in frame_list%}
+                    <a class="btn btn-danger" href="{% url 'project-detail' pk=anchor.pk pk2=frame.prev.pk%}">Prev</a>
+                {% else %}
+                    <a class="btn btn-danger" disabled="disabled">Start</a>
+                {% endif %}
+            </div>
+            <div class="col-xs-2 col-md-1">
+                <p>{{ frame_count }}/{{ total_frames }}</p>
+            </div>
+            <div class="col-xs-2 col-md-1">
+                {% if frame.next and frame.next.pk in frame_list%}
+                    <a class="btn btn-danger" href="{% url 'project-detail' pk=anchor.pk pk2=frame.next.pk %}">Next</a>
+                {% else %}
+                    <a class="btn btn-danger" disabled="disabled">End</a>
+                    <a class="btn btn-success" href="{% url 'edit-project' pk=anchor.pk pk2=frame.pk%}">작업완료</a>
+                {% endif %}
+            </div>
+            <div class="col-xs-2 col-md-1">
+                <a class="btn btn-danger" href="{% url 'project-detail' pk=anchor.pk pk2=last_frame%}">마지막으로가기</a>
+            </div>
+            <div class="col-xs-3 col-md-2">
+                <p class="error"></p>
+            </div>
+        </div>
+        <div class="row">
+            <a class="btn btn-success submit" href="javascript:void(0)">저장 (Enter)</a>
+            <p>{{ frame.candidate_info.rotated_image.url}}
+            </p>
+        </div>
+
+    </div>
+    {% else %}
+        <div class="row">
+        <h1>You are not logged in</h1>
+        <h2><a href="{% url 'login' %}">login</a></h2>
+        </div>
+    {% endif %}
+{% endblock %}
+
+{% block js %}
+    <script language="javascript">
+        var canvas = $('.canvas')[0];
+        var ctx = canvas.getContext('2d');
+        var rects = [];
+        var rectsToDelete = [];
+        var moving = false;
+        var drawing = false;
+        var resizing = false;
+        var movingRect = null;
+        var start = null;
+        var imageObj = null;
+        var sending = false;
+        var imageType = null;
+
+        {% if frame.box_from_frame %}
+            rects.push({
+                id: {{ frame.box_from_frame.id }},
+                left: {{ frame.box_from_frame.left }},
+                top: {{ frame.box_from_frame.top }},
+                right: {{ frame.box_from_frame.right }},
+                bottom: {{ frame.box_from_frame.bottom }},
+                anchor: {{ anchor.pk }}, {# anchor원본 pk 저장 #}
+                frame: {{ frame.pk}}, {# frame 원본 pk 저장 #}
+            });
+        {% endif %}
+
+        var nextURL = null;
+
+        function init() {
+            $('#radio-ko').click();
+            imageObj = new Image();
+            imageObj.onload = function () {
+                var canvasWidth = $('.wrapper').width();
+                var scale = canvasWidth / imageObj.width;
+                canvas.width = canvasWidth;
+                canvas.height = imageObj.height * scale;
+                $('.translation-wrapper').height($('.wrapper').height());
+                $('.well').css('min-height', $('.wrapper').height()*0.8);
+                drawAll();
+            };
+            imageObj.src = '{{ frame.candidate_info.rotated_image.url}}';
+            console.log(imageObj.src);
+            canvas.addEventListener('mousedown', mouseDown, false);
+            canvas.addEventListener('mouseup', mouseUp, false);
+            canvas.addEventListener('mousemove', mouseMove, false);
+            canvas.addEventListener('contextmenu', function(e){e.preventDefault();}, false);
+
+            $(document).keyup(function(e) {
+                console.log(e.which);
+                if (e.which == 13) {
+                    // enter
+                    e.preventDefault();
+                    {% if frame.next and frame.next.pk in frame_list%}
+                        nextURL = "{% url 'project-detail' pk=anchor.pk pk2=frame.next.pk%}";
+                    {% endif %}
+                    onSubmit();
+
+                }
+                else if (e.which == 37){
+                    {% if frame.prev and frame.prev.pk in frame_list%}
+                        window.location.href = "{% url 'project-detail' pk=anchor.pk pk2=frame.prev.pk%}";
+                    {% endif %}
+                    e.preventDefault();
+
+                }
+                else if (e.which == 39){
+                    {% if frame.next and frame.next.pk in frame_list%}
+                        window.location.href = "{% url 'project-detail' pk=anchor.pk pk2=frame.next.pk%}";
+                    {% endif %}
+                    e.preventDefault();
+                }
+            });
+
+            $('#box_input_label').focus();
+        }
+
+
+function ptInRect(p, r) {
+    return (p.x >= r.left &&
+        p.x <= r.right &&
+        p.y >= r.top &&
+        p.y <= r.bottom);
+}
+
+        function ptInRightCorner(p, r) {
+            var d = Math.hypot(p.x - r.right, p.y - r.bottom);
+            return d < Math.min((r.right - r.left) / 3, (r.bottom - r.top) / 3, 10);
+        }
+
+        function intersectRect(r1, r2) {
+            return !(r2.left > r1.right ||
+                r2.right < r1.left ||
+                r2.top > r1.bottom ||
+                r2.bottom < r1.top);
+        }
+
+        function getOffsetX() {
+            return canvas.getBoundingClientRect().left + window.scrollX;
+        }
+
+        function getOffsetY() {
+            return canvas.getBoundingClientRect().top + window.scrollY;
+        }
+
+        function pageToRelative(pageX, pageY) {
+            var x = (pageX - getOffsetX()) / canvas.width;
+            var y = (pageY - getOffsetY()) / canvas.height;
+            return {x: x, y: y};
+        }
+
+        function relativeToPage(relX, relY) {
+            var x = (relX * canvas.width) + getOffsetX();
+            var y = (relY * canvas.height) + getOffsetY();
+            return {x: x, y: y};
+        }
+
+        function findRect(p) {
+            for (var i = 0; i < rects.length; i++) {
+                var rect = rects[i];
+                if (ptInRect(p, rect)) {
+                    return rect;
+                }
+            }
+            return null;
+        }
+
+        function findIntersectingRect(r) {
+            for (var i = 0; i < rects.length; i++) {
+                var rect = rects[i];
+                if (intersectRect(r, rect)) {
+                    return rect;
+                }
+            }
+            return null;
+        }
+
+        var timeout = null;
+        function error(str) {
+            clearTimeout(timeout);
+            $('.error').text(str);
+            timeout = setTimeout(function() {$('.error').text('');}, 2000);
+        }
+
+        function drawRect(rect) {
+            var startPageXY = relativeToPage(rect.left, rect.top);
+            var endPageXY = relativeToPage(rect.right, rect.bottom);
+            // Draw rectangle
+            var x = startPageXY.x - getOffsetX();
+            var y = startPageXY.y - getOffsetY();
+            var w = endPageXY.x - startPageXY.x;
+            var h = endPageXY.y - startPageXY.y;
+            if ('id' in rect) {
+                ctx.strokeStyle = 'red';
+            }
+            else {
+                ctx.strokeStyle = 'green';
+            }
+            ctx.strokeRect(x, y, w, h);
+            // Draw description
+            ctx.font="20px Arial";
+            ctx.fillText(rect.label, x+5, y);
+        }
+
+        function drawAll() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(imageObj, 0, 0, canvas.width, canvas.height);
+            for(var i = 0; i < rects.length; i++) {
+                drawRect(rects[i]);
+            }
+        }
+
+        function mouseDown(e) {
+            e.preventDefault();
+            var p = pageToRelative(e.pageX, e.pageY);
+            var rect = findRect(p);
+            if (rect != null) {
+                $('#box_input_label').val(rect.label);
+                var index = rects.indexOf(rect);
+                if (e.button == 0) {
+                    start = pageToRelative(e.pageX, e.pageY);
+                    movingRect = rect;
+                    rects.splice(index, 1);
+                    if (ptInRightCorner(p, rect)) {
+                        resizing = true;
+                    }
+                    else {
+                        moving = true;
+                    }
+                }
+                else if (e.button == 2) {
+                    rects.splice(index, 1);
+                    if (rect.id > 0) {
+                        rectsToDelete.push(rect.id);
+                    }
+                }
+            }
+            else {
+                if (e.button == 0) {
+                    start = pageToRelative(e.pageX, e.pageY);
+                    drawing = true;
+                }
+            }
+            drawAll();
+        }
+
+        function mouseUp(e) {
+            e.preventDefault();
+            var end = pageToRelative(e.pageX, e.pageY);
+            var label = $('#box_input_label').val();
+            if (drawing) {
+                if (start.x >= end.x || start.y >= end.y) {
+                    error('사각형은 좌측 상단에서 우측 하단 방향으로 그리세요');
+                }
+                else {
+                    rect = {
+                        left: start.x,
+                        top: start.y,
+                        right: end.x,
+                        bottom: end.y,
+                        anchor: {{ anchor.pk }},{# 굳이 anchor 저장 할 필요 있을까? #}
+                        frame : {{ frame.pk }},
+                        changed: true,
+                        {#label: currentBoxType > -1 ? currentBoxType : label#}
+                    };
+                    rects.push(rect);
+                }
+                drawing = false;
+            }
+            else if (moving) {
+                var deltaX = end.x - start.x;
+                var deltaY = end.y - start.y;
+                movingRect.left += deltaX;
+                movingRect.top += deltaY;
+                movingRect.right += deltaX;
+                movingRect.bottom += deltaY;
+                movingRect.label = currentBoxType > -1 ? currentBoxType : label;
+                movingRect.changed = true;
+                rects.push(movingRect);
+                moving = false;
+            }
+            else if (resizing) {
+                var deltaX = end.x - start.x;
+                var deltaY = end.y - start.y;
+                movingRect.right += deltaX;
+                movingRect.bottom += deltaY;
+                var tmp;
+                if (movingRect.left >= movingRect.right) {
+                    tmp = movingRect.left, movingRect.left = movingRect.right, movingRect.right = tmp;
+                }
+                if (movingRect.top >= movingRect.bottom) {
+                    tmp = movingRect.top, movingRect.top = movingRect.bottom, movingRect.bottom = tmp;
+                }
+                movingRect.label = label;
+                movingRect.changed = true;
+                rects.push(movingRect);
+                resizing = false;
+            }
+            drawAll();
+            $('#box_input_label').val('');
+            $('#box_input_label').focus();
+        }
+
+        function mouseMove(e) {
+            drawAll();
+            if (drawing) {
+                var p = pageToRelative(e.pageX, e.pageY);
+                var tempRect = {
+                    left: start.x,
+                    top: start.y,
+                    right: p.x,
+                    bottom: p.y,
+                    source: {{ anchor.pk }},
+                    frame: {{ frame.pk }}
+                };
+                drawRect(tempRect);
+            }
+            else if (moving) {
+                var p = pageToRelative(e.pageX, e.pageY);
+                var deltaX = p.x - start.x;
+                var deltaY = p.y - start.y;
+                var tempRect = {
+                    left: movingRect.left + deltaX,
+                    top: movingRect.top + deltaY,
+                    right: movingRect.right + deltaX,
+                    bottom: movingRect.bottom + deltaY
+                };
+                drawRect(tempRect);
+            }
+            else if (resizing) {
+                var p = pageToRelative(e.pageX, e.pageY);
+                var deltaX = p.x - start.x;
+                var deltaY = p.y - start.y;
+                var tempRect = {
+                    left: movingRect.left,
+                    top: movingRect.top,
+                    right: movingRect.right + deltaX,
+                    bottom: movingRect.bottom + deltaY
+                };
+                drawRect(tempRect);
+            }
+        }
+
+        var csrftoken = $.cookie('csrftoken');
+        $.ajaxSetup({
+            beforeSend: function(xhr, settings) {
+                xhr.setRequestHeader("X-CSRFToken", csrftoken);
+            }
+        });
+
+        {#function onClick() {#}
+        {#        if (sending) {#}
+        {#        error("이미 전송중입니다. 잠시만 더 기다려주세요. (반응이 없으면 페이지를 새로고침해 주세요)");#}
+        {#    } else {#}
+        {#        error("잠시만 기다려주세요...");#}
+
+
+
+function onSubmit() {
+
+    if (sending) {
+        error("이미 전송중입니다. 잠시만 더 기다려주세요. (반응이 없으면 페이지를 새로고침해 주세요)");
+    } else {
+        error("잠시만 기다려주세요...");
+        sending = true;
+        post_items = [];
+
+        for (var i=0; i<rects.length; i++) {
+            var rect = rects[i];
+            if (rect.changed) {
+                if (rect.id) {
+                    post_items.push({
+                        'url': '/api/anchor-frame/box/' + rect.id + '/',
+                        'method': 'put',
+                        'data': rect,
+                    });
+                } else {
+                    post_items.push({
+                        'url': '/api/anchor-frame/box/',
+                        'method': 'post',
+                        'data': rect,
+                    });
+                }
+            }
+        }
+        for (var i=0; i<rectsToDelete.length; i++) {
+            var rectId = rectsToDelete[i];
+            post_items.push({
+                'url': '/api/anchor-frame/box/' + rectId + '/',
+                'method': 'delete',
+            });
+        }
+        async.each(
+            post_items,
+            function(post_item, doneCallback) {
+                $.ajax({
+                    url: post_item.url,
+                    type: post_item.method,
+                    data: post_item.data,
+                    success: function(resp) {
+                        doneCallback();
+                    },
+                    error:function(request,status,error) {
+                        alert("오류가 발생했습니다! 페이지를 새로고침한 후, 작업을 다시 시작해 주세요. code:"+request.status+"\n"+"error:"+error+"\n"+"message:"+request.responseText);
+                    }
+                });
+            },
+            function(err) {
+                sending = false;
+                error("저장되었습니다.");
+                if(nextURL){
+                    window.location.href = nextURL;
+                }
+                else {
+                    location.reload()
+                }
+            }
+        );
+    }
+}
+
+
+
+$('.submit').click(onSubmit);
+        {#$('.edit_anchor').click(onClick);#}
+
+        var currentBoxType = -1;
+
+        $(document).ready(function() {
+            init();
+
+
+            // box-types
+            $('.box-type').on('click', function() {
+                $('.box-type').removeClass('checked');
+                $(this).addClass('checked');
+                currentBoxType = $(this).data('type');
+            });
+
+            {#$('#generate-candidates').on('click', function() {#}
+            {#   $.ajax({#}
+            {#       url: '{% url 'candidate-create' anchor.pk%}',#}
+            {#       type: 'GET',#}
+            {#       success: function(data) {#}
+            {##}
+            {#       },#}
+            {#       error: function(jqXHR, exception) {#}
+            {#           console.log(jqXHR, exception);#}
+            {#       }#}
+            {#   });#}
+        });
+
+
+</script>
+{% endblock %}
+
+
+{% block css %}
+    <style>
+        .row {
+            margin: 20px 2px 10px 50px;
+        }
+
+        .col-md-1, .col-md-2, .col-md-3 {
+            text-align: center;
+        }
+
+        .col-md-1 p {
+            color: red;
+            font-weight: bold;
+            margin-top: 8px;
+        }
+
+        .error {
+            color: red;
+            height: 30px;
+            margin-top: 8px;
+        }
+
+
+        .wrapper {
+            border: 3px solid blue;
+            margin: 0 80px 0 150px;
+            width: 700px;
+            float: left;
+        }
+
+        .submit {
+            margin-left: 730px
+        }
+
+    </style>
+{% endblock %}

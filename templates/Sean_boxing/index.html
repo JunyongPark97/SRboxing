@@ -1,0 +1,132 @@
+<<<<<<< HEAD
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Testset</title>
+</head>
+<body>
+<h1>Hello Park!!!!!!</h1>
+{#<a href = {% url 'test' 1%}>gogotest</a>#}
+</body>
+{% block js %}
+    <script language="javascript">
+
+    {#function onSubmit() {#}
+
+    {#if (sending) {#}
+    {#    error("이미 전송중입니다. 잠시만 더 기다려주세요. (반응이 없으면 페이지를 새로고침해 주세요)");#}
+    {#    error("잠시만 기다려주세요...");#}
+    {#    sending = true;#}
+    {#    post_items = new Array();#}
+    {#    post_items.push({#}
+    {#        'url': '/api/test/' + ?'' +'/',#}
+    {#        'method': 'patch',#}
+    {#        'data': {#}
+    {#            valid: true,#}
+    {#        }#}
+    {#    })#}
+</script>
+
+{% endblock %}
+</html>
+=======
+{% extends 'registration/base.html' %}
+{% block title %}source{% endblock %}
+
+{% block script %}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/async/2.0.1/async.js"></script>
+{% endblock %}
+
+{% block body %}
+    {%  if user.is_authenticated  %}
+        <div style=" float: left;">
+        <div class="row">
+            <h1>Hello, {{ user }}</h1>
+            <h3 style="color: darkblue">누적 작업량 {{ box_count }} box</h3>
+            <br>
+            <h1><a class="btn btn-danger btn-lg" id="generate-anchor" href="javascript:void(0)">문제 할당 받기</a></h1>
+            <br>
+            <h3 style="color: red">할당받은 문제 수 : {{ anchor_count }}</h3>
+            <h3 style="color: red">완료한 문제 수 : {{ valid_project }}</h3>
+        </div>
+            <br><br><br>
+
+        </div>
+        <br><br>
+        <p class="wrapper">
+            <img src="{{ anchor.anchor_image.url }}" width="300" hspace="20"/>
+            <strong>현재 작업 중인 문제</strong>
+        </p>
+                    <div class="row">
+                {% if anchor %}
+                    <a class="btn btn-primary btn-lg" href={% url 'project-detail' anchor.id anchor.valid_frame_first.id%}>박싱하러가기</a>
+                {% else %}
+                    <a class="btn btn-primary btn-lg" disabled="disabled">박싱하러가기</a>
+                {% endif %}
+            </div>
+    {% else %}
+        <p>You are not logged in</p>
+        <a href="{% url 'login' %}">login</a>
+    {% endif %}
+{% endblock %}
+
+{% block js %}
+    <script language="javascript">
+        $('#generate-anchor').on('click', function() {
+            $.ajax({
+                url: '{% url 'make-project'%}',
+                type: 'post',
+                data: {
+                    csrfmiddlewaretoken: "{{ csrf_token }}",
+                    {#user = {{ user }}#}
+                },
+                success: function(data) {
+                    location.reload()
+                },
+                error: function(jqXHR, exception) {
+                    console.log(jqXHR, exception);
+                    location.reload()
+                }
+            });
+        });
+
+    </script>
+{% endblock %}
+
+{% block css %}
+    <style>
+        .row {
+            margin: 5px 2px 10px 50px;
+        }
+
+        .col-md-1, .col-md-2, .col-md-3 {
+            text-align: center;
+        }
+
+        .col-md-1 p {
+            color: red;
+            font-weight: bold;
+            margin-top: 8px;
+        }
+
+        .error {
+            color: red;
+            height: 30px;
+            margin-top: 8px;
+        }
+
+        .wrapper {
+            border: 3px solid yellowgreen;
+            margin: 0 70px 0 130px;
+            width: 350px;
+            float: left;
+        }
+
+        .submit {
+            margin-left: 730px
+        }
+
+    </style>
+{% endblock %}
+>>>>>>> Add user management and API

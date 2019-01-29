@@ -1,0 +1,25 @@
+{%  extends 'registration/base.html' %}
+{%  block content %}
+{%  if user.is_active %}
+<h2>Welcome, {{ user.username }}</h2><br>
+ <a class="btn btn-primary" href="{%  url 'logout' %}"><span class="glyphicon glyphicon-user"></span> 로그아웃</a>
+ <a class="btn btn-primary" href="{% url 'main' %}"><span class="glyphicon glyphicon-home"> 홈으로가기</a>
+
+
+{% else %}
+    {% if form.errors %}
+    <p>ID나 비밀번호가 일치하지 않습니당</p>
+    {% endif %}
+
+<form method="POST" action="">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="" />
+    {{ form.as_p }}
+    <button type="submit">로그인</button>
+</form>
+
+<br>
+{#<p>아이디가 없으신가요? <a herf="{% url 'signup' %}">회원가입</a></p>#}
+
+{% endif %}
+{% endblock %}

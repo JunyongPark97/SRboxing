@@ -1,0 +1,471 @@
+{% extends 'Sean_boxing/base.html' %}
+
+
+{% block title %}source{% endblock %}
+
+
+{% block script %}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/async/2.0.1/async.js"></script>
+{% endblock %}
+
+
+{% block body %}
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-xs-2 col-md-1">
+      {% if object.prev %}
+      <a class="btn btn-danger" href="{% url 'qbqboxing-detail' pk=object.prev.pk %}">Prev</a>
+      {% else %}
+      <a class="btn btn-danger" disabled="disabled">Start</a>
+      {% endif %}
+    </div>
+    <div class="col-xs-2 col-md-1">
+      <p>Anchor {{ object.index }}</p>
+    </div>
+    <div class="col-xs-2 col-md-1">
+      {% if object.next %}
+      <a class="btn btn-danger" href="{% url 'qbqboxing-detail' pk=object.next.pk %}">Next</a>
+      {% else %}
+      <a class="btn btn-danger" disabled="disabled">End</a>
+      {% endif %}
+    </div>
+
+    <div class="col-xs-3 col-md-2">
+      <p class="error"></p>
+    </div>
+  </div>
+
+  <div class="wrapper">
+    <canvas class="canvas"></canvas>
+  </div>
+
+  <div class="row" style="float: left;">
+    <p style="margin-left: 20px;">
+        원본 이미지에서 그림만 박싱 하는 페이지 입니다. <br>
+    </p>
+  </div>
+
+  <div class="row" style="clear: both;">
+    <p class="text-center">추가 기능 : 드래그(박스 이동) / 우측하단 드래그(크기 조절) / 우클릭(박스 제거)</p>
+  </div>
+  <div class="row">
+    <a class="btn btn-success submit" href="javascript:void(0)">저장 (Enter)</a>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block js %}
+<script language="javascript">
+var canvas = $('.canvas')[0];
+var ctx = canvas.getContext('2d');
+var rects = new Array();
+var rectsToDelete = new Array();
+var moving = false;
+var drawing = false;
+var resizing = false;
+var movingRect = null;
+var start = null;
+var imageObj = null;
+var sending = false;
+var imageType = null;
+
+{% for box in object.anchor.all %}
+rects.push({
+    id: {{ box.id }},
+    left: {{ box.left }},
+    top: {{ box.top }},
+    right: {{ box.right }},
+    bottom: {{ box.bottom }},
+    source: {{ object.pk }},
+});
+{% endfor %}
+
+function init() {
+    $('#radio-ko').click();
+    imageObj = new Image();
+    imageObj.onload = function () {
+        var canvasWidth = $('.wrapper').width();
+        var scale = canvasWidth / imageObj.width;
+        canvas.width = canvasWidth;
+        canvas.height = imageObj.height * scale;
+        $('.translation-wrapper').height($('.wrapper').height());
+        $('.well').css('min-height', $('.wrapper').height()*0.8);
+        drawAll();
+    };
+    imageObj.src = '{{ object.image_url }}';
+    console.log(imageObj.src);
+    canvas.addEventListener('mousedown', mouseDown, false);
+    canvas.addEventListener('mouseup', mouseUp, false);
+    canvas.addEventListener('mousemove', mouseMove, false);
+    canvas.addEventListener('contextmenu', function(e){e.preventDefault();}, false);
+
+    $(document).keypress(function(e) {
+        if (e.which == 13) {
+            // enter
+            e.preventDefault();
+            onSubmit();
+        }
+    });
+    $('#box_input_label').focus();
+}
+
+
+function ptInRect(p, r) {
+    return (p.x >= r.left &&
+            p.x <= r.right &&
+            p.y >= r.top &&
+            p.y <= r.bottom);
+}
+
+function ptInRightCorner(p, r) {
+    var d = Math.hypot(p.x - r.right, p.y - r.bottom);
+    return d < Math.min((r.right - r.left) / 3, (r.bottom - r.top) / 3, 10);
+}
+
+function intersectRect(r1, r2) {
+    return !(r2.left > r1.right ||
+             r2.right < r1.left ||
+             r2.top > r1.bottom ||
+             r2.bottom < r1.top);
+}
+
+function getOffsetX() {
+    return canvas.getBoundingClientRect().left + window.scrollX;
+}
+
+function getOffsetY() {
+    return canvas.getBoundingClientRect().top + window.scrollY;
+}
+
+function pageToRelative(pageX, pageY) {
+    var x = (pageX - getOffsetX()) / canvas.width;
+    var y = (pageY - getOffsetY()) / canvas.height;
+    return {x: x, y: y};
+}
+
+function relativeToPage(relX, relY) {
+    var x = (relX * canvas.width) + getOffsetX();
+    var y = (relY * canvas.height) + getOffsetY();
+    return {x: x, y: y};
+}
+
+function findRect(p) {
+    for (var i = 0; i < rects.length; i++) {
+        var rect = rects[i];
+        if (ptInRect(p, rect)) {
+            return rect;
+        }
+    }
+    return null;
+}
+
+function findIntersectingRect(r) {
+    for (var i = 0; i < rects.length; i++) {
+        var rect = rects[i];
+        if (intersectRect(r, rect)) {
+            return rect;
+        }
+    }
+    return null;
+}
+
+var timeout = null;
+function error(str) {
+    clearTimeout(timeout);
+    $('.error').text(str);
+    timeout = setTimeout(function() {$('.error').text('');}, 2000);
+}
+
+function drawRect(rect) {
+    var startPageXY = relativeToPage(rect.left, rect.top);
+    var endPageXY = relativeToPage(rect.right, rect.bottom);
+    // Draw rectangle
+    var x = startPageXY.x - getOffsetX();
+    var y = startPageXY.y - getOffsetY();
+    var w = endPageXY.x - startPageXY.x;
+    var h = endPageXY.y - startPageXY.y;
+    if ('id' in rect) {
+        ctx.strokeStyle = 'red';
+    }
+    else {
+        ctx.strokeStyle = 'green';
+    }
+    ctx.strokeRect(x, y, w, h);
+    // Draw description
+    ctx.font="20px Arial"
+    {#ctx.fillText(rect.label, x+5, y);#}
+}
+
+function drawAll() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(imageObj, 0, 0, canvas.width, canvas.height);
+    for(var i = 0; i < rects.length; i++) {
+        drawRect(rects[i]);
+    }
+}
+
+function mouseDown(e) {
+    e.preventDefault();
+    var p = pageToRelative(e.pageX, e.pageY);
+    var rect = findRect(p);
+    if (rect != null) {
+        var index = rects.indexOf(rect);
+        if (e.button == 0) {
+            start = pageToRelative(e.pageX, e.pageY);
+            movingRect = rect;
+            rects.splice(index, 1);
+            if (ptInRightCorner(p, rect)) {
+                resizing = true;
+            }
+            else {
+                moving = true;
+            }
+        }
+        else if (e.button == 2) {
+            rects.splice(index, 1);
+            if (rect.id > 0) {
+                rectsToDelete.push(rect.id);
+            }
+        }
+    }
+    else {
+        if (e.button == 0) {
+            start = pageToRelative(e.pageX, e.pageY);
+            drawing = true;
+        }
+    }
+    drawAll();
+}
+
+function mouseUp(e) {
+    e.preventDefault();
+    var end = pageToRelative(e.pageX, e.pageY);
+    if (drawing) {
+        if (start.x >= end.x || start.y >= end.y) {
+            error('사각형은 좌측 상단에서 우측 하단 방향으로 그리세요');
+        }
+        else {
+            rect = {
+                left: start.x,
+                top: start.y,
+                right: end.x,
+                bottom: end.y,
+                source: {{ object.pk }},
+                changed: true,
+            };
+            rects.push(rect);
+        }
+        drawing = false;
+    }
+    else if (moving) {
+        var deltaX = end.x - start.x;
+        var deltaY = end.y - start.y;
+        movingRect.left += deltaX;
+        movingRect.top += deltaY;
+        movingRect.right += deltaX;
+        movingRect.bottom += deltaY;
+        movingRect.changed = true;
+        rects.push(movingRect);
+        moving = false;
+    }
+    else if (resizing) {
+        var deltaX = end.x - start.x;
+        var deltaY = end.y - start.y;
+        movingRect.right += deltaX;
+        movingRect.bottom += deltaY;
+        var tmp;
+        if (movingRect.left >= movingRect.right) {
+            tmp = movingRect.left, movingRect.left = movingRect.right, movingRect.right = tmp;
+        }
+        if (movingRect.top >= movingRect.bottom) {
+            tmp = movingRect.top, movingRect.top = movingRect.bottom, movingRect.bottom = tmp;
+        }
+        movingRect.changed = true;
+        rects.push(movingRect);
+        resizing = false;
+    }
+    drawAll();
+    $('#box_input_label').focus();
+}
+
+function mouseMove(e) {
+    drawAll();
+    if (drawing) {
+        var p = pageToRelative(e.pageX, e.pageY);
+        var tempRect = {
+            left: start.x,
+            top: start.y,
+            right: p.x,
+            bottom: p.y,
+            source: {{ object.pk }}
+        };
+        drawRect(tempRect);
+    }
+    else if (moving) {
+        var p = pageToRelative(e.pageX, e.pageY);
+        var deltaX = p.x - start.x;
+        var deltaY = p.y - start.y;
+        var tempRect = {
+            left: movingRect.left + deltaX,
+            top: movingRect.top + deltaY,
+            right: movingRect.right + deltaX,
+            bottom: movingRect.bottom + deltaY
+        };
+        drawRect(tempRect);
+    }
+    else if (resizing) {
+        var p = pageToRelative(e.pageX, e.pageY);
+        var deltaX = p.x - start.x;
+        var deltaY = p.y - start.y;
+        var tempRect = {
+            left: movingRect.left,
+            top: movingRect.top,
+            right: movingRect.right + deltaX,
+            bottom: movingRect.bottom + deltaY
+        };
+        drawRect(tempRect);
+    }
+}
+
+var csrftoken = $.cookie('csrftoken');
+$.ajaxSetup({
+    beforeSend: function(xhr, settings) {
+        xhr.setRequestHeader("X-CSRFToken", csrftoken);
+    }
+});
+
+function onSubmit() {
+
+    if (sending) {
+        error("이미 전송중입니다. 잠시만 더 기다려주세요. (반응이 없으면 페이지를 새로고침해 주세요)");
+    } else {
+        error("잠시만 기다려주세요...");
+        sending = true;
+        post_items = new Array();
+        post_items.push({
+          'url': '/api/anchor-making/' + {{object.pk}} + '/',
+          'method': 'patch',
+          'data': {
+            valid: true,
+          }
+        });
+        for (var i=0; i<rects.length; i++) {
+          var rect = rects[i];
+          if (rect.changed) {
+            if (rect.id) {
+                post_items.push({
+                    'url': '/api/anchor-making/anchor/' + rect.id + '/',
+                    'method': 'put',
+                    'data': rect,
+                });
+            } else {
+                post_items.push({
+                    'url': '/api/anchor-making/anchor/',
+                    'method': 'post',
+                    'data': rect,
+                });
+            }
+          }
+        }
+        for (var i=0; i<rectsToDelete.length; i++) {
+            var rectId = rectsToDelete[i];
+            post_items.push({
+                'url': '/api/anchor-making/anchor/' + rectId + '/',
+                'method': 'delete',
+            });
+        }
+        async.each(
+            post_items,
+            function(post_item, doneCallback) {
+                $.ajax({
+                    url: post_item.url,
+                    type: post_item.method,
+                    data: post_item.data,
+                    success: function(resp) {
+                        doneCallback();
+                    },
+                    error:function(request,status,error) {
+                        alert("오류가 발생했습니다! 페이지를 새로고침한 후, 작업을 다시 시작해 주세요. code:"+request.status+"\n"+"error:"+error+"\n"+"message:"+request.responseText);
+                    }
+                });
+            },
+            function(err) {
+                sending = false;
+                error("저장되었습니다.");
+                location.reload();
+            }
+        );
+    }
+}
+
+
+
+$('.submit').click(onSubmit);
+
+var currentBoxType = -1;
+
+$(document).ready(function() {
+    init();
+
+
+    // box-types
+    $('.box-type').on('click', function() {
+        $('.box-type').removeClass('checked');
+        $(this).addClass('checked');
+        currentBoxType = $(this).data('type');
+    });
+
+    {#$('#generate-candidates').on('click', function() {#}
+    {#   $.ajax({#}
+    {#       url: '{% url 'candidate-create' object.pk%}',#}
+    {#       type: 'GET',#}
+    {#       success: function(data) {#}
+    {##}
+    {#       },#}
+    {#       error: function(jqXHR, exception) {#}
+    {#           console.log(jqXHR, exception);#}
+    {#       }#}
+    {#   });#}
+    });
+
+</script>
+{% endblock %}
+
+
+{% block css %}
+  <style>
+    .row {
+      margin: 5px 0;
+    }
+
+    .col-md-1, .col-md-2, .col-md-3 {
+      text-align: center;
+    }
+
+    .col-md-1 p {
+      color: red;
+      font-weight: bold;
+      margin-top: 8px;
+    }
+
+    .error {
+      color: red;
+      height: 30px;
+      margin-top: 8px;
+    }
+
+
+    .wrapper {
+      border: 3px solid blue;
+      margin: 0 70px 0 130px;
+      width: 700px;
+      float: left;
+    }
+
+    .submit {
+      margin-left: 730px
+    }
+
+  </style>
+{% endblock %}

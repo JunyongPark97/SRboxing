@@ -1,0 +1,15 @@
+{%  extends 'registration/base.html' %}
+{%  block content %}
+
+        {%  if user.is_staff %}
+    <a style="float: right" href="{% url 'manage' %}"><h3>홈으로 가기</h3></a>
+    {% for day,values in all_info.items %}
+    <h2 style="color: darkblue">{{ day }}일 - {{ values }}&nbsp;:(box개수, 본 개수)</h2>
+    {% endfor %}
+
+    {% else %}
+     <p>You are not logged in</p>
+     <a href="{% url 'user:login' %}">login</a>
+
+    {% endif %}
+{% endblock %}

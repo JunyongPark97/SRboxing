@@ -1,0 +1,13 @@
+{%  extends 'registration/base.html' %}
+{%  block content %}
+
+    {%  if user.is_authenticated %}
+    {% for use in users %}
+        <a href="{% url 'manage-detail' use.pk%}"><h2>{{ use }}</h2></a>
+        {% endfor %}
+    {% else %}
+     <p>You are not logged in</p>
+     <a href="{% url 'login' %}">login</a>
+
+    {% endif %}
+{% endblock %}
