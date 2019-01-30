@@ -147,21 +147,13 @@ AUTH_PASSWORD_VALIDATORS = []
 
 LANGUAGE_CODE = 'en-us'
 
-<<<<<<< HEAD
-TIME_ZONE = 'UTC'
-=======
 TIME_ZONE = 'Asia/Seoul'
->>>>>>> Add user management and API
 
 USE_I18N = True
 
 USE_L10N = True
 
-<<<<<<< HEAD
-USE_TZ = True
-=======
 USE_TZ = False
->>>>>>> Add user management and API
 
 
 
@@ -190,10 +182,6 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.TokenAuthentication',
     ),
-<<<<<<< HEAD
-}
-
-=======
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
     'PAGE_SIZE': 300
 }
@@ -201,4 +189,3 @@ REST_FRAMEWORK = {
 # AUTH_USER_MODEL = 'Sean_boxing.User'
 LOGIN_REDIRECT_URL='/'
 # LOGOUT_REDIRECT_URL='/logout/'
->>>>>>> Add user management and API

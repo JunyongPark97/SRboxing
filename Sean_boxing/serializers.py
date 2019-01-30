@@ -1,13 +1,7 @@
-<<<<<<< HEAD
-from rest_framework import serializers
-
-from .models import Anchor, CandidateInfo, Box, QBQ, Frame
-=======
 from django.contrib.auth.models import User
 from rest_framework import serializers
 
 from .models import Anchor, CandidateInfo, Box, QBQ, Frame, Project
->>>>>>> Add user management and API
 
 
 class CurrentFrameDefault(object):
@@ -36,20 +30,11 @@ class AnchorWriteSerializer(serializers.ModelSerializer):
     top = serializers.DecimalField(max_digits=51, decimal_places=50)
     right = serializers.DecimalField(max_digits=51, decimal_places=50)
     bottom = serializers.DecimalField(max_digits=51, decimal_places=50)
-<<<<<<< HEAD
-    work_user = serializers.HiddenField(default=serializers.CurrentUserDefault())
-=======
-    # work_user = serializers.HiddenField(default=serializers.CurrentUserDefault())
->>>>>>> Add user management and API
     QBQ_source = serializers.HiddenField(default=CurrentQBQDefault())
 
     class Meta:
         model = Anchor
-<<<<<<< HEAD
-        fields = ['id', 'QBQ_source', 'left', 'top', 'right', 'bottom', 'work_user']
-=======
         fields = ['id', 'QBQ_source', 'left', 'top', 'right', 'bottom']
->>>>>>> Add user management and API
 
     def create(self, validated_data):
         QBQ = validated_data['QBQ_source']
@@ -59,11 +44,6 @@ class AnchorWriteSerializer(serializers.ModelSerializer):
         right = validated_data['right'],
         bottom = validated_data['bottom'],
         QBQ_source = QBQ,
-<<<<<<< HEAD
-        work_user = validated_data['work_user']
-=======
-        # work_user = validated_data['work_user']
->>>>>>> Add user management and API
         )
 
 
@@ -113,10 +93,6 @@ class BoxReadSerializer(serializers.ModelSerializer):
         fields = ['id', 'left', 'top', 'right', 'bottom']
 
 
-<<<<<<< HEAD
-class CandidateSerializer(serializers.ModelSerializer):
-    boxes = BoxReadSerializer(read_only=True, many=True)
-=======
 class BoxCandiReadSerializer(serializers.ModelSerializer):
     left = serializers.FloatField()
     top = serializers.FloatField()
@@ -129,14 +105,10 @@ class BoxCandiReadSerializer(serializers.ModelSerializer):
 
 
 class CandidateSerializer(serializers.ModelSerializer):
->>>>>>> Add user management and API
 
     class Meta:
         model = CandidateInfo
         fields = (
-<<<<<<< HEAD
-            'id', 'image_url', 'boxes',
-=======
             'rotation_image_url','rotation_angle',
         )
 
@@ -147,13 +119,11 @@ class FrameSerializer(serializers.ModelSerializer):
 
     def get_valid_candidate(self, frame):
         qs=CandidateInfo.objects.filter(frame_from_candidate=frame)
-        # print(qs)
         serializer = CandidateSerializer(instance=qs, many=True)
         return serializer.data
 
     def get_valid_box(self, frame):
         qs=Box.objects.filter(frame_source=frame)
-        # print(qs)
         serializer = BoxReadSerializer(instance=qs, many=True)
         return serializer.data
 
@@ -163,35 +133,21 @@ class FrameSerializer(serializers.ModelSerializer):
             'id',
             'candidate_info',
             'box',
->>>>>>> Add user management and API
         )
 
 
 class AnchorSerializer(serializers.ModelSerializer):
-<<<<<<< HEAD
-    boxes = BoxReadSerializer(read_only=True, many=True)
-=======
     frame = serializers.SerializerMethodField('get_valid_frame')
 
     def get_valid_frame(self, anchor):
         user=User.objects.get(username='minjun')
         qs=Frame.objects.filter(box_from_frame__isnull=False, box_from_frame__work_user=user ,anchor_source=anchor)
-        # print(qs)
         serializer = FrameSerializer(instance=qs, many=True)
         return serializer.data
->>>>>>> Add user management and API
 
     class Meta:
         model = Anchor
         fields = (
-<<<<<<< HEAD
-            'id', 'image_url', 'boxes', 'QBQ_source', 'anchor_group'
-        )
-
-
-class QBQSerializer(serializers.ModelSerializer):
-    anchors = AnchorReadSerializer(read_only=True, many=True)
-=======
             'id', 'anchor_image_url',
             'frame',
         )
@@ -199,13 +155,6 @@ class QBQSerializer(serializers.ModelSerializer):
 
 class QBQReadSerializer(serializers.ModelSerializer):
     anchor = AnchorSerializer(read_only=True, many=True)
-
-    # def get_valid_anchor(self, qbq):
-    #     # user=User.objects.get(username='minjun')
-    #     qs=Anchor.objects.filter(box_from_frame__isnull=False ,QBQ_source=qbq)
-    #     print(qs)
-    #     serializer = FrameSerializer(instance=qs, many=True)
-    #     return serializer.data
 
     class Meta:
         model = QBQ
@@ -217,16 +166,11 @@ class QBQReadSerializer(serializers.ModelSerializer):
 #box 저장할때 사용
 class QBQSerializer(serializers.ModelSerializer):
     anchor = AnchorReadSerializer(read_only=True, many=True)
->>>>>>> Add user management and API
 
     class Meta:
         model = QBQ
         fields = (
-<<<<<<< HEAD
-            'id', 'image_url', 'anchors', 'book_title', 'book_id'
-=======
             'id', 'image_url', 'anchor', 'book_title', 'book_id'
->>>>>>> Add user management and API
         )
 
 
@@ -234,9 +178,6 @@ class CandidateReadSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CandidateInfo
-<<<<<<< HEAD
-        fields = '__all__'
-=======
         fields = '__all__'
 
 
@@ -249,12 +190,8 @@ class ProjectMakeSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         valid_anchor = validated_data['valid_anchor']
-        print(valid_anchor)
         user = validated_data['user']
-        print(user)
-        # valid_anchor = Anchor.objects.filter(valid=None).order_by('pk').first()
         return Project.objects.create(
             assigned_anchor=valid_anchor,
             assigned_user=user
         )
->>>>>>> Add user management and API

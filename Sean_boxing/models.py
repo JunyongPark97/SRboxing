@@ -1,37 +1,18 @@
 import random
 import string
-<<<<<<< HEAD
-=======
 import json
 import logging
 from datetime import datetime
->>>>>>> Add user management and API
 from io import BytesIO
-
 import requests
 from django.contrib.auth.base_user import AbstractBaseUser
-<<<<<<< HEAD
-from django.contrib.auth.models import User
-from django.core.files.uploadedfile import InMemoryUploadedFile
-from django.db import models
-=======
 from django.contrib.auth.models import User, AbstractUser
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.db import models
 from munch import munchify
->>>>>>> Add user management and API
-
 from qanda.ocr.models import OCRSearchRequest
 from qbase.models import QBaseQuestion
 from django import template
-<<<<<<< HEAD
-
-register = template.Library()
-
-
-PRECISION = 4
-THRESHOLD = 0.1 ** PRECISION
-=======
 # import user
 
 register = template.Library()
@@ -41,23 +22,7 @@ logger = logging.getLogger('test')
 PRECISION = 4
 THRESHOLD = 0.1 ** PRECISION
 CANDIDATES_COUNT = 100
->>>>>>> Add user management and API
 
-book_lst = \
-    [
-        '개념원리RPM중22학기',
-        '개념원리RPM수학2',
-        '개념원리RPM중3하2016',
-        '개념SSEN중등수학1하2016',
-        'SSEN중등수학3하',
-        '라이트SSEN중등수학2하',
-        '라이트SSEN중등수학3하',
-        'SSEN중등수학1하',
-        'SSEN중등수학2하',
-        '개념SSEN중등수학3하2016',
-        '개념SSEN중등수학2하2016',
-        '라이트SSEN중등수학1하',
-    ]
 
 def get_box_filename():
     return ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(12)) + '.jpg'
@@ -73,11 +38,7 @@ class AnchorGroup(models.Model):
 
 class QBQ(models.Model):
     QBaseQuestion_id = models.IntegerField()
-<<<<<<< HEAD
-    image_url = models.URLField(max_length=200)## 이전 자료 보고 uuid or image_url property 확인
-=======
     image_url = models.URLField(max_length=200)
->>>>>>> Add user management and API
     book_title = models.CharField(max_length=50)
     book_id = models.IntegerField()
 
@@ -94,12 +55,8 @@ class QBQ(models.Model):
 
     def save(self, *args, **kwargs):
         super(QBQ, self).save(*args, **kwargs)
-<<<<<<< HEAD
-        self._create_vaild_candidates()
-=======
         # self._create_candidate() # data 업데이트 이후 수정 필요
         # self.create_default_anchor() # 마찬가지
->>>>>>> Add user management and API
 
     def get_id_list(self):
         id_list = []
@@ -108,30 +65,13 @@ class QBQ(models.Model):
         return id_list
 
     def _candidate_list(self):
-<<<<<<< HEAD
-        candidates_qs = OCRSearchRequest.objects.filter(
-                        ocr_question_logs__qbase_question_id=self.QBaseQuestion_id)[:50]
-        return candidates_qs
-=======
         candidates_list = OCRSearchRequest.objects.filter(
                         ocr_question_logs__qbase_question_id=self.QBaseQuestion_id).order_by('-pk')[:CANDIDATES_COUNT]
         return candidates_list
->>>>>>> Add user management and API
 
     def _create_candidate(self):
         for candidate in self._candidate_list():
             QBQ_source = QBQ.objects.get(id=self.pk)
-<<<<<<< HEAD
-            CandidateInfo.objects.create(QBQ_source=QBQ_source,
-                                      OCRSearchRequest_id=candidate.id,
-                                      image_key=candidate.image_key)
-
-    def _create_vaild_candidates(self):
-        if self.candidates.all().exists():
-            pass
-        else:
-            self._create_candidate()
-=======
             CandidateInfo.objects.get_or_create(QBQ_source=QBQ_source,
                                       OCRSearchRequest_id=candidate.id,
                                       image_key=candidate.image_key)
@@ -142,7 +82,7 @@ class QBQ(models.Model):
             result = json.loads(requests.post('http://125.129.239.235:14025/api/similar/', data=data).text)
         except:
             result = None
-        return result['boxes']# 여기다가 self.api_satatus라는 필드 만들어서 한번 호출하면 True로 바꾸고 True 이면 call 안하기
+        return result['boxes']
 
     def create_default_anchor(self):
         failed_ids=[]
@@ -157,7 +97,6 @@ class QBQ(models.Model):
                                                   bottom=box['bottm'])
         except:
             failed_ids.append(self.pk)
->>>>>>> Add user management and API
 
 
 class Anchor(models.Model):
@@ -168,12 +107,8 @@ class Anchor(models.Model):
     right = models.DecimalField(max_digits=PRECISION + 1, decimal_places=PRECISION)
     bottom = models.DecimalField(max_digits=PRECISION + 1, decimal_places=PRECISION)
     anchor_image = models.ImageField(upload_to='anchor')
-<<<<<<< HEAD
-    work_user = models.ForeignKey(User, related_name='worked_anchor', on_delete=models.CASCADE)
-=======
     # work_user = models.ForeignKey(User, null=True, blank=True, related_name='worked_anchor', on_delete=models.CASCADE)
     valid = models.NullBooleanField()
->>>>>>> Add user management and API
 
     @property
     def prev(self):
@@ -184,13 +119,10 @@ class Anchor(models.Model):
         return Anchor.objects.filter(pk__gt=self.pk).order_by('pk').first()
 
     @property
-<<<<<<< HEAD
-=======
     def anchor_image_url(self):
         return self.anchor_image.url
 
     @property
->>>>>>> Add user management and API
     def valid_frame_first(self):
         frames = self.frame_from_anchor.all()
         frame = frames.filter(valid=False).order_by('pk')
@@ -234,17 +166,6 @@ class Anchor(models.Model):
         self._save_anchor_image()
         self._make_frames()
 
-<<<<<<< HEAD
-    def update(self, left, top, right, bottom, **kwargs):
-        if not equals(float(self.left), left) or \
-                not equals(float(self.top), top) or \
-                not equals(float(self.right), right) or \
-                not equals(float(self.bottom), bottom):
-            self.left = left
-            self.top = top
-            self.right = right
-            self.bottom = bottom
-=======
     def update(self, left, top, right, bottom, valid,**kwargs):
         try:
             if not equals(float(self.left), left) or \
@@ -266,7 +187,6 @@ class Anchor(models.Model):
 
     def update_valid(self, valid, **kwargs):
             self.valid = valid
->>>>>>> Add user management and API
             self.save()
 
     def _save_anchor_image(self):
@@ -317,13 +237,10 @@ class CandidateInfo(models.Model):
         return self.QBQ_source.image_url
 
     @property
-<<<<<<< HEAD
-=======
     def rotation_image_url(self):
         return self.rotated_image.url
 
     @property
->>>>>>> Add user management and API
     def prev(self):
         return CandidateInfo.objects.filter(pk__lt=self.pk).order_by('pk').last()
 
@@ -357,12 +274,6 @@ class Frame(models.Model):
     anchor_source = models.ForeignKey(Anchor, related_name='frame_from_anchor', on_delete=models.CASCADE)
     candidate_info = models.ForeignKey(CandidateInfo, related_name='frame_from_candidate', on_delete=models.CASCADE)
     valid = models.NullBooleanField(default=False)
-<<<<<<< HEAD
-
-    @property
-    def prev(self):
-        return Frame.objects.filter(pk__lt=self.pk).order_by('pk').last()
-=======
     valid_updated_at = models.DateTimeField(blank=True, null=True)
 
     @property
@@ -371,23 +282,16 @@ class Frame(models.Model):
         anchor = frame.anchor_source
         prev_frame = anchor.frame_from_anchor.filter(pk__lt=self.pk).order_by('pk').last()
         return prev_frame
->>>>>>> Add user management and API
 
     @property
     def next(self):
         frame = Frame.objects.get(pk=self.pk)
-<<<<<<< HEAD
-        frame.valid=True
-        frame.save()
-        return Frame.objects.filter(pk__gt=self.pk).order_by('pk').first()
-=======
         anchor = frame.anchor_source
         next_frame = anchor.frame_from_anchor.filter(pk__gt=self.pk).order_by('pk').first()
         frame.valid=True
         frame.valid_updated_at = datetime.now()
         frame.save()
         return next_frame
->>>>>>> Add user management and API
 
     @property
     def valid_next(self):
@@ -417,10 +321,7 @@ class Box(models.Model):
     def save(self, *args, **kwargs):
         self.validate_coordinates()
         super(Box, self).save(*args, **kwargs)
-<<<<<<< HEAD
-=======
         self._update_anchor_valid()
->>>>>>> Add user management and API
 
     def update(self, left, top, right, bottom, **kwargs):
         if not equals(float(self.left), left) or \
@@ -438,22 +339,18 @@ class Box(models.Model):
             return 'B%d' % self.id
         return ''
 
-<<<<<<< HEAD
-=======
     def _update_anchor_valid(self):
         box = Box.objects.get(id=self.pk)
         frame = box.frame_source
         anchor = frame.anchor_source
         anchor.valid=True
         anchor.save()
->>>>>>> Add user management and API
+
 
 class BoxTag(models.Model):
     box = models.ForeignKey(Box, related_name='tags', on_delete=models.CASCADE)
     key = models.CharField(max_length=200)
     value = models.CharField(max_length=200)
-<<<<<<< HEAD
-=======
 
 
 class Project(models.Model):
@@ -471,4 +368,3 @@ class Project(models.Model):
         valid_next = Project.objects.filter(valid=None).filter(pk__gt=self.pk).order_by('pk').first()
         return valid_next
 
->>>>>>> Add user management and API

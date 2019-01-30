@@ -35,18 +35,6 @@
 
   <div class="row" style="clear: both;">
     <p class="anchor-image">
-<<<<<<< HEAD
-        <img src="{{ anchor.anchor_image.url }}" width="245"/>
-        <strong>Anchor Image</strong>
-        <img src="{{ anchor.QBQ_source.image_url }}" width="400/">
-        <strong>원본 Image</strong>
-    </p>
-  </div>
-
-  <div class="row" style="float: left;">
-    <p style="margin-left: 20px;">
-        보기와 같은 그림에 박스를 쳐 주세요<br>
-=======
         <a href="{% url 'qbqboxing-detail' pk=anchor.QBQ_source.pk%}" target="_blank"><img src="{{ anchor.anchor_image.url }}" width="245" hspace="20"/></a>
         <strong>←보기와 같은 그림에 박스를 쳐 주세요 &nbsp; &nbsp;</strong>
         <span style="padding-right: 140px"><img src="{{ anchor.QBQ_source.image_url }}" width="500/" >
@@ -65,7 +53,6 @@
     <p style="margin-left: 20px; background-color: lemonchiffon">
         보기와 같은 그림에 박스를 쳐 주세요<br>
         이미지를 클릭하면 anchor image 를 수정할 수 있습니다.
->>>>>>> Add user management and API
     </p>
   </div>
 
@@ -74,10 +61,6 @@
     <h3 style="margin-left: 500px;">
         박스: {{ box_count }}/50<br>
     </h3>
-<<<<<<< HEAD
-      </span>
-    </font>
-=======
       {% if box_count >= 49 %}
       <a class="btn btn-danger" href="{% url 'edit-anchor' pk=anchor.pk pk2=frame.pk%}">작업완료</a>
       {% else %}
@@ -85,7 +68,6 @@
 {#      <a class="btn btn-danger" disabled="disabled">End2</a>#}
       {% endif %}
       </span>
->>>>>>> Add user management and API
 
   </div>
 
@@ -101,28 +83,15 @@
 
   <div class="row">
     <div class="col-xs-2 col-md-1">
-<<<<<<< HEAD
-      {% if frame.prev and frame.prev.pk in frame_limit%}
-=======
         <a class="btn btn-danger" href="{% url 'finalboxing-detail' pk=anchor.pk pk2=first_frame%}">처음으로가기</a>
     </div>
     <div class="col-xs-2 col-md-1">
       {% if frame.prev and frame.prev.pk in frame_list%}
->>>>>>> Add user management and API
       <a class="btn btn-danger" href="{% url 'finalboxing-detail' pk=anchor.pk pk2=frame.prev.pk%}">Prev</a>
       {% else %}
       <a class="btn btn-danger" disabled="disabled">Start</a>
       {% endif %}
     </div>
-<<<<<<< HEAD
-    <div class="col-xs-2 col-md-1">
-      {% if frame.next and frame.next.pk in frame_limit%}
-      <a class="btn btn-danger" href="{% url 'finalboxing-detail' pk=anchor.pk pk2=frame.next.pk %}">Next</a>
-      {% else %}
-      <a class="btn btn-danger" disabled="disabled">End</a>
-      {% endif %}
-    </div>
-=======
         <div class="col-xs-2 col-md-1">
       <p>{{ frame_count }}/{{ total_frames }}</p>
     </div>
@@ -137,18 +106,14 @@
       <div class="col-xs-2 col-md-1">
         <a class="btn btn-danger" href="{% url 'finalboxing-detail' pk=anchor.pk pk2=last_frame%}">마지막으로가기</a>
     </div>
->>>>>>> Add user management and API
     <div class="col-xs-3 col-md-2">
       <p class="error"></p>
     </div>
   </div>
   <div class="row">
     <a class="btn btn-success submit" href="javascript:void(0)">저장 (Enter)</a>
-<<<<<<< HEAD
-=======
       <p>{{ frame.candidate_info.rotated_image.url}}
 </p>
->>>>>>> Add user management and API
   </div>
 
 </div>
@@ -158,13 +123,8 @@
 <script language="javascript">
 var canvas = $('.canvas')[0];
 var ctx = canvas.getContext('2d');
-<<<<<<< HEAD
-var rects = new Array();
-var rectsToDelete = new Array();
-=======
 var rects = [];
 var rectsToDelete = [];
->>>>>>> Add user management and API
 var moving = false;
 var drawing = false;
 var resizing = false;
@@ -186,11 +146,8 @@ rects.push({
 });
 {% endif %}
 
-<<<<<<< HEAD
-=======
 var nextURL = null;
 
->>>>>>> Add user management and API
 function init() {
     $('#radio-ko').click();
     imageObj = new Image();
@@ -204,24 +161,12 @@ function init() {
         drawAll();
     };
     imageObj.src = '{{ frame.candidate_info.rotated_image.url}}';
-<<<<<<< HEAD
-=======
     console.log(imageObj.src);
->>>>>>> Add user management and API
     canvas.addEventListener('mousedown', mouseDown, false);
     canvas.addEventListener('mouseup', mouseUp, false);
     canvas.addEventListener('mousemove', mouseMove, false);
     canvas.addEventListener('contextmenu', function(e){e.preventDefault();}, false);
 
-<<<<<<< HEAD
-    $(document).keypress(function(e) {
-        if (e.which == 13) {
-            // enter
-            e.preventDefault();
-            onSubmit();
-        }
-    });
-=======
     $(document).keyup(function(e) {
         console.log(e.which);
         if (e.which == 13) {
@@ -248,7 +193,6 @@ function init() {
         }
     });
 
->>>>>>> Add user management and API
     $('#box_input_label').focus();
 }
 
@@ -335,11 +279,7 @@ function drawRect(rect) {
     }
     ctx.strokeRect(x, y, w, h);
     // Draw description
-<<<<<<< HEAD
-    ctx.font="20px Arial"
-=======
     ctx.font="20px Arial";
->>>>>>> Add user management and API
     ctx.fillText(rect.label, x+5, y);
 }
 
@@ -489,8 +429,6 @@ $.ajaxSetup({
     }
 });
 
-<<<<<<< HEAD
-=======
 {#function onClick() {#}
 {#        if (sending) {#}
 {#        error("이미 전송중입니다. 잠시만 더 기다려주세요. (반응이 없으면 페이지를 새로고침해 주세요)");#}
@@ -499,7 +437,6 @@ $.ajaxSetup({
 {#}#}
 
 
->>>>>>> Add user management and API
 function onSubmit() {
 
     if (sending) {
@@ -507,14 +444,8 @@ function onSubmit() {
     } else {
         error("잠시만 기다려주세요...");
         sending = true;
-<<<<<<< HEAD
-        post_items = new Array();
-
-        console.log(rects)
-=======
         post_items = [];
 
->>>>>>> Add user management and API
         for (var i=0; i<rects.length; i++) {
           var rect = rects[i];
           if (rect.changed) {
@@ -524,20 +455,12 @@ function onSubmit() {
                     'method': 'put',
                     'data': rect,
                 });
-<<<<<<< HEAD
-                console.log('pushed');
-=======
->>>>>>> Add user management and API
             } else {
                 post_items.push({
                     'url': '/api/anchor-frame/box/',
                     'method': 'post',
                     'data': rect,
                 });
-<<<<<<< HEAD
-                console.log('pushed');
-=======
->>>>>>> Add user management and API
             }
           }
         }
@@ -548,10 +471,6 @@ function onSubmit() {
                 'method': 'delete',
             });
         }
-<<<<<<< HEAD
-        console.log(post_items);
-=======
->>>>>>> Add user management and API
         async.each(
             post_items,
             function(post_item, doneCallback) {
@@ -570,16 +489,12 @@ function onSubmit() {
             function(err) {
                 sending = false;
                 error("저장되었습니다.");
-<<<<<<< HEAD
-                location.reload();
-=======
                 if(nextURL){
                     window.location.href = nextURL;
                 }
                 else {
                     location.reload()
                 }
->>>>>>> Add user management and API
             }
         );
     }
@@ -588,10 +503,7 @@ function onSubmit() {
 
 
 $('.submit').click(onSubmit);
-<<<<<<< HEAD
-=======
 {#$('.edit_anchor').click(onClick);#}
->>>>>>> Add user management and API
 
 var currentBoxType = -1;
 
@@ -619,10 +531,7 @@ $(document).ready(function() {
     {#   });#}
     });
 
-<<<<<<< HEAD
-=======
 
->>>>>>> Add user management and API
 </script>
 {% endblock %}
 

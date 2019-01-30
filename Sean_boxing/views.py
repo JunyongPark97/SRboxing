@@ -1,30 +1,3 @@
-<<<<<<< HEAD
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import render
-from django.utils.decorators import method_decorator
-from django.views.generic import DetailView, TemplateView
-from rest_framework import viewsets
-from rest_framework.pagination import LimitOffsetPagination
-from rest_framework.permissions import IsAuthenticated
-
-from .serializers import CandidateSerializer, BoxWriteSerializer, AnchorWriteSerializer, QBQSerializer
-from .models import CandidateInfo, Anchor, Box, QBQ, Frame
-
-
-
-def index(request):
-    return render(request, 'Sean_boxing/index.html')
-
-
-@method_decorator(login_required, name='dispatch')
-class CandidateDetailView(DetailView):
-    model = CandidateInfo
-
-
-@method_decorator(login_required, name='dispatch')
-class AnchorDetailView(DetailView):
-    model = Anchor
-=======
 import django_filters
 from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
@@ -75,71 +48,59 @@ class ProjectView(TemplateView):
     permission_classes = (IsAuthenticated,)
 
     def get_context_data(self, pk, pk2):
-        if self.request.user.is_authenticated:
-            context = super(ProjectView, self).get_context_data()
-            anchor = Anchor.objects.get(id=pk)
-            id_list=[]
-            user = self.request.user
-            frames_id = anchor.frame_from_anchor.values('id')
-            project_list = Project.objects.filter(assigned_user=user)
+        context = super(ProjectView, self).get_context_data()
+        anchor = Anchor.objects.get(id=pk)
+        id_list=[]
+        user = self.request.user
+        frames_id = anchor.frame_from_anchor.values('id')
+        project_list = Project.objects.filter(assigned_user=user)
 
-            prev_project = project_list.filter(valid=None).filter(assigned_user=user).filter(assigned_anchor_id__lt=pk).order_by('pk').last()
-            next_project = project_list.filter(valid=None).filter(assigned_user=user).filter(assigned_anchor_id__gt=pk).order_by('pk').first()
+        prev_project = project_list.filter(valid=None).filter(assigned_user=user).filter(assigned_anchor_id__lt=pk).order_by('pk').last()
+        next_project = project_list.filter(valid=None).filter(assigned_user=user).filter(assigned_anchor_id__gt=pk).order_by('pk').first()
 
-            if prev_project:
-                prev_anchor = prev_project.assigned_anchor
-            else:
-                prev_anchor = None
-            if next_project:
+        if prev_project:
+            prev_anchor = prev_project.assigned_anchor
+        else:
+            prev_anchor = None
+        if next_project:
                 next_anchor = next_project.assigned_anchor
-            else:
+        else:
                 next_anchor = None
 
-            frame = anchor.frame_from_anchor.get(id=pk2)
-            """
-            anchor를 변경했을 때 prev,next가 없는 anchor들을 필터링 합니다.
-            """
-            if prev_anchor:
-                prev_frame = prev_anchor.frame_from_anchor.all().last()
-            else:
-                prev_frame = None
+        frame = anchor.frame_from_anchor.get(id=pk2)
+        """
+        anchor를 변경했을 때 prev,next가 없는 anchor들을 필터링 합니다.
+        """
+        if prev_anchor:
+            prev_frame = prev_anchor.frame_from_anchor.all().last()
+        else:
+            prev_frame = None
 
-            if next_anchor:
-                next_frame = next_anchor.frame_from_anchor.all().first()
-            else:
-                next_frame = None
+        if next_anchor:
+            next_frame = next_anchor.frame_from_anchor.all().first()
+        else:
+            next_frame = None
 
-            """
-            한 anchor당 속해있는 frames를 제한하기 위한 id를 얻습니다.
-            """
-            for frame_id in frames_id:
-                id_list.append(frame_id['id'])
+        """
+        한 anchor당 속해있는 frames를 제한하기 위한 id를 얻습니다.
+        """
+        for frame_id in frames_id:
+            id_list.append(frame_id['id'])
 
-            context['anchor'] = anchor
-            context['frame_list'] = id_list
-            context['frame'] = frame
-            context['p_frame'] = prev_frame
-            context['n_frame'] = next_frame
-            context['box_count'] = anchor.frame_from_anchor.filter(box_from_frame__isnull=False).count()
-            context['frame_count'] = id_list.index(pk2)+1
-            context['total_frames'] = len(id_list)
-            context['all_anchors'] = anchor.QBQ_source.anchor.all()
-            context['first_frame'] = id_list[0]
-            context['last_frame'] = id_list[-1]
-            context['prev_anchor'] = prev_anchor
-            context['next_anchor'] = next_anchor
-            return context
-
-#
-# @method_decorator(login_required, name='dispatch')
-# class CandidateDetailView(DetailView):
-#     model = CandidateInfo
-#
-#
-# @method_decorator(login_required, name='dispatch')
-# class AnchorDetailView(DetailView):
-#     model = Anchor
->>>>>>> Add user management and API
+        context['anchor'] = anchor
+        context['frame_list'] = id_list
+        context['frame'] = frame
+        context['p_frame'] = prev_frame
+        context['n_frame'] = next_frame
+        context['box_count'] = anchor.frame_from_anchor.filter(box_from_frame__isnull=False).count()
+        context['frame_count'] = id_list.index(pk2)+1
+        context['total_frames'] = len(id_list)
+        context['all_anchors'] = anchor.QBQ_source.anchor.all()
+        context['first_frame'] = id_list[0]
+        context['last_frame'] = id_list[-1]
+        context['prev_anchor'] = prev_anchor
+        context['next_anchor'] = next_anchor
+        return context
 
 
 @method_decorator(login_required, name='dispatch')
@@ -161,16 +122,6 @@ class BoxViewSet(viewsets.ModelViewSet):
         qdict = self.request.data
         qdict = qdict.dict()
         return {'request': self.request, 'frame': qdict['frame']}
-
-<<<<<<< HEAD
-
-=======
-#사용안함
->>>>>>> Add user management and API
-class CandidateViewSet(viewsets.ModelViewSet):
-    queryset = CandidateInfo.objects.all()
-    serializer_class = CandidateSerializer
-    pagination_class = LimitOffsetPagination
 
 
 class AnchorViewSet(viewsets.ModelViewSet):
@@ -194,20 +145,14 @@ class AnchorFrameView(TemplateView):
     template_name = 'Sean_boxing/anchor_detail.html'
 
     def get_context_data(self, pk, pk2):
-<<<<<<< HEAD
-=======
         global frame_next, frame_prev
->>>>>>> Add user management and API
         context = super(AnchorFrameView, self).get_context_data()
         anchor = Anchor.objects.get(id=pk)
         id_list=[]
         frames_id = anchor.frame_from_anchor.values('id')
         prev_anchor = anchor.prev
         next_anchor = anchor.next
-<<<<<<< HEAD
-=======
         frame = anchor.frame_from_anchor.get(id=pk2)
->>>>>>> Add user management and API
         """
         anchor를 변경했을 때 prev,next가 없는 anchor들을 필터링 합니다.
         """
@@ -220,10 +165,7 @@ class AnchorFrameView(TemplateView):
             next_frame = next_anchor.frame_from_anchor.all().first()
         else:
             next_frame = None
-<<<<<<< HEAD
-=======
 
->>>>>>> Add user management and API
         """
         한 anchor당 속해있는 frames를 제한하기 위한 id를 얻습니다.
         """
@@ -231,14 +173,6 @@ class AnchorFrameView(TemplateView):
             id_list.append(frame_id['id'])
 
         context['anchor'] = anchor
-<<<<<<< HEAD
-        context['frame_limit'] = id_list
-        context['frame'] = anchor.frame_from_anchor.get(id=pk2)
-        context['p_frame'] = prev_frame
-        context['n_frame'] = next_frame
-        context['box_count'] = anchor.frame_from_anchor.filter(box_from_frame__isnull=False).count()
-        return context
-=======
         context['frame_list'] = id_list
         context['frame'] = frame
         context['p_frame'] = prev_frame
@@ -291,8 +225,7 @@ class ManageUserList(ListView):
     context_object_name = 'users'
     permission_classes = (IsAuthenticated,)
 
-
-    def get_queryset(self): # 컨텍스트 오버라이딩
+    def get_queryset(self):
       return User.objects.filter(project__isnull=False).distinct()
 
 
@@ -379,31 +312,3 @@ def search(request):
     box_filter = BoxFilter(request.GET, queryset=box_list)
     return render(request, 'search/box_list.html', {'filter': box_filter})
 
-
-#api/box으로 접속 가능하며 user가 작업한 작업 결과를 확인할 수 있는 API를 생성합니다.
-class AnchorReadViewset(viewsets.ModelViewSet):
-    queryset = Anchor.objects.all()
-    serializer_class = AnchorSerializer
-    permission_classes = (IsAuthenticated, )
-    filter_backends = (django_filters.rest_framework.DjangoFilterBackend,)
-    # filter_class = BoxTypeFilter
-
-    def get_queryset(self):
-        user = User.objects.get(username='minjun')
-        frames = Frame.objects.filter(box_from_frame__isnull=False, box_from_frame__work_user=user)
-
-        if 'pk' in self.kwargs:
-            print(self.kwargs['pk'])
-            valid_anchor = self.queryset.filter(frame_from_anchor__in=frames).distinct()
-            valid_anchor = valid_anchor[:float(self.kwargs['pk'])]
-            return HttpResponse('ee')
-        else:
-            valid_anchor = self.queryset.filter(frame_from_anchor__in=frames).distinct()[:100]
-        return valid_anchor
-
-
-    @classmethod
-    def get_extra_actions(cls):
-        return []
-
->>>>>>> Add user management and API
