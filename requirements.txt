@@ -22,7 +22,7 @@ python-dateutil==2.7.5
 pytz==2018.5
 PyYAML==3.13
 requests==2.21.0
-rsa==3.4.2
+rsa==4.7
 s3transfer==0.1.13
 serializers==0.2.4
 six==1.12.0
